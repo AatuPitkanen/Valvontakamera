@@ -58,7 +58,7 @@ class Application(Frame):
 
             username = 'username@gmail.com'
             password = 'password'
-            Server = smtplib.SMTP('smtp.gmail.com:587')
+            Server = smtplib.SMTP('smtp.gmail.com:587') #Googles smtp server
             Server.starttls()
             Server.login(username,password)
             Server.sendmail(sender, receivers, message.as_string())
@@ -91,7 +91,7 @@ class Application(Frame):
 
        with picamera.PiCamera() as camera:
           time.sleep(2)
-          GPIO.wait_for_edge(4, GPIO.FALLING)
+          GPIO.wait_for_edge(4, GPIO.FALLING) # wait until PIR-sensor in IO-pin 4 detects movement 
           print "Kuva otettu"
           camera.capture('/home/pi/Desktop/'+ d +'.jpg')
 
