@@ -1,4 +1,5 @@
-import time
+#When recording is done this program sends video to my email as an attachment
+import time 
 import picamera
 import RPi.GPIO as GPIO
 
@@ -9,7 +10,7 @@ from email.MIMEImage import MIMEImage
 from email.mime.application import MIMEApplication
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(4,GPIO.IN, GPIO.PUD_UP) #when infrared sensor detects movement start recording
+GPIO.setup(4,GPIO.IN, GPIO.PUD_UP) #when infrared sensor attached to IO pin 4 detects movement, start recording
 
 with picamera.PiCamera() as camera:
    camera.resolution = (640, 480)
@@ -35,7 +36,7 @@ if state == "Valmis":
    username = 'embeddedKamera@gmail.com'
    password = 'password'
 
-   Server = smtplib.SMTP('smtp.gmail.com:587')
+   Server = smtplib.SMTP('smtp.gmail.com:587') # Googles smtp server
    Server.starttls()
    Server.login(username,password)
    Server.sendmail(sender, receivers, message.as_string())
