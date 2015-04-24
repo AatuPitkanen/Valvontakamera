@@ -3,7 +3,6 @@ import time
 import picamera
 import RPi.GPIO as GPIO
 import socket
-import RPi.GPIO as GPIO
 import smtplib
 from email.mime.text import MIMEText
 from email.MIMEMultipart import MIMEMultipart
