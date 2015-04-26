@@ -1,3 +1,4 @@
+# Code for PIR sensor testing and config.
 import time
 import picamera
 import RPi.GPIO as GPIO
