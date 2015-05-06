@@ -3,6 +3,7 @@ import time
 import picamera
 import RPi.GPIO as GPIO
 import socket
+import RPi.GPIO as GPIO
 import smtplib
 from email.mime.text import MIMEText
 from email.MIMEMultipart import MIMEMultipart
@@ -18,12 +19,31 @@ class Application(Frame):
        self.create_widgets()
 
    def create_widgets(self):
-       self.button1 = Button(self, text = "Email video")
-       self.button1["command"] = self.email
+
+       self.instuction = Label(self, text = "Enter email")
+       self.instuction.grid(row = 0, column =0, columnspan = 2, sticky = W)
+
+       self.email = Entry(self)
+       self.email.grid(row = 1, column = 0, sticky = W)
+
+       self.instruction2 = Label(self, text = "Enter password")
+       self.instruction2.grid(row = 2, column = 0, sticky = W)
+
+       self.password = Entry(self,show="*")
+       self.password.grid(row = 3, column = 0, sticky = W)
+
+       self.submit_button = Button(self, text = "Show Un/pw in console", command = self.add_email)
+       self.submit_button.grid(row = 4, column = 0, sticky = W)
+ 
+       self.label = Label(self, text = "Choose action")
+       self.label.grid(row = 5, column = 0, sticky = W)
+
+       self.button1 = Button(self, text = "Start Stream")
+       self.button1["command"] = self.stream
        self.button1.grid()
 
-       self.button2 = Button(self, text = "Start Stream")
-       self.button2["command"] = self.stream
+       self.button2 = Button(self, text = "Take Videos")
+       self.button2["command"] = self.video
        self.button2.grid()
       
        self.button3 = Button(self, text = "Take pictures")
@@ -33,40 +53,67 @@ class Application(Frame):
        self.button4 = Button(self, text = "Email picture")
        self.button4["command"] = self.email_picture
        self.button4.grid()
+       
+       self.button5 = Button(self, text = "Email video")
+       self.button5["command"] = self.email
+       self.button5.grid()       
+
+   def add_email(self):
+       username = self.email.get()
+       password = self.password.get()
+       print "Username: "+username+"|"+"Password: " + password
+
+
+   def video(self):
+       GPIO.setmode(GPIO.BCM)
+       GPIO.setup(4,GPIO.IN, GPIO.PUD_UP)
+       with picamera.PiCamera() as camera:
+	 video = 1
+	 while video == 1:
+	   camera.resolution = (640, 480)
+           GPIO.wait_for_edge(4,GPIO.FALLING)
+	   print "Nauhoitus alkoi"
+	   camera.start_recording('/home/pi/Desktop/'+d+'.h264')
+	   camera.wait_recording(60)
+	   camera.stop_recording()
+	   print "Video valmis"
     
    def email(self):
+       username = self.email.get()
+       password = self.password.get()
+
        GPIO.setmode(GPIO.BCM)
        GPIO.setup(4,GPIO.IN, GPIO.PUD_UP)
 
        with picamera.PiCamera() as camera:
-           camera.resolution = (640, 480)
-           GPIO.wait_for_edge(4,GPIO.FALLING)
-           print "Nauhoitus alkoi"
-           camera.start_recording('/home/pi/Desktop/Foo.h264')
-           camera.wait_recording(30)
-           camera.stop_recording()
-           print "Nauhoitus paattyi"
-           state = "Valmis"
+          loop = 1
+          while loop == 1:
+	           camera.resolution = (640, 480)
+	           GPIO.wait_for_edge(4,GPIO.FALLING)
+	           print "Nauhoitus alkoi"
+	           camera.start_recording('/home/pi/Desktop/Foo.h264')
+        	   camera.wait_recording(30)
+          	   camera.stop_recording()
+	           print "Nauhoitus paattyi"
+	           state = "Valmis"
 
-       if state == "Valmis":
-            sender = 'embeddedkamera@gmail.com'
-            receivers = ['aatu.pitkanen@hotmail.com']
+	           if state == "Valmis":
+	            sender = 'embeddedkamera@gmail.com'
+	            receivers = ['aatu.pitkanen@hotmail.com']
 
-            message = MIMEMultipart()
-            message['Subject'] = 'Valvontakamera Video'
-            message['From'] = 'Raspi'
-            message['To'] = 'Aatu'
-            message.attach(MIMEApplication(open("/home/pi/Desktop/Foo.h264", "rb").read()))
-            message.add_header('Content-Disposition', 'attachment', filename="Video.h264")
-
-            username = 'embeddedKamera@gmail.com'
-            password = 'password'
-            Server = smtplib.SMTP('smtp.gmail.com:587')
-            Server.starttls()
-            Server.login(username,password)
-            Server.sendmail(sender, receivers, message.as_string())
-            print "Sahkoposti lahetetty!"
-            Server.quit()
+	            message = MIMEMultipart()
+       		    message['Subject'] = 'Valvontakamera Video'
+	            message['From'] = 'Raspi'
+	            message['To'] = 'Aatu'
+	            message.attach(MIMEApplication(open("/home/pi/Desktop/Foo.h264", "rb").read()))
+	            message.add_header('Content-Disposition', 'attachment', filename="Video.h264")
+	
+	            Server = smtplib.SMTP('smtp.gmail.com:587')
+	            Server.starttls()
+	            Server.login(username,password)
+	            Server.sendmail(sender, receivers, message.as_string())
+	            print "Sahkoposti lahetetty!"
+	            Server.quit()
       
    def stream(self):
        client_socket = socket.socket()
@@ -89,11 +136,15 @@ class Application(Frame):
               client_socket.close()
 
    def email_picture(self):
+     username = self.email.get()
+     password = self.password.get()
+
      GPIO.setmode(GPIO.BCM)
      GPIO.setup(4, GPIO.IN, GPIO.PUD_UP)
      with picamera.PiCamera() as camera:
-     
-        time.sleep(2)
+      time.sleep(1)
+	  kuva = 1
+      while kuva == 1:
         GPIO.wait_for_edge(4, GPIO.FALLING)
         print "Kuva otettu"
         camera.capture("/home/pi/Desktop/Testi.jpg")
@@ -113,9 +164,6 @@ class Application(Frame):
            img.add_header('Content-Disposition', 'attachment', filename=d + ".jpg")
            message.attach(img)
 
-           username = 'embeddedKamera@gmail.com'
-           password = 'password'
-
            Server = smtplib.SMTP('smtp.gmail.com:587')
            Server.starttls()
            Server.login(username,password)
@@ -128,14 +176,16 @@ class Application(Frame):
        GPIO.setup(4, GPIO.IN, GPIO.PUD_UP)
 
        with picamera.PiCamera() as camera:
-          time.sleep(2)
+	kuva = 1
+	while kuva == 1:
+          time.sleep(1)
           GPIO.wait_for_edge(4, GPIO.FALLING)
           print "Kuva otettu"
           camera.capture('/home/pi/Desktop/'+ d +'.jpg')
 
 root = Tk()
 root.title("Valvontakamera/Riistakamera")
-root.geometry("300x200")
+root.geometry("350x300")
 app = Application(root)
 root.mainloop()
 
