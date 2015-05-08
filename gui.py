@@ -20,13 +20,19 @@ class Application(Frame):
 
    def create_widgets(self):
 
-       self.instuction = Label(self, text = "Enter email")
+       self.instuction = Label(self, text = "Enter sender email")
        self.instuction.grid(row = 0, column =0, columnspan = 2, sticky = W)
+
+       self.instuction2 = Label(self, text = "Enter receiver email")
+       self.instuction2.grid(row = 0, column =1, columnspan = 2, sticky = W)
 
        self.email = Entry(self)
        self.email.grid(row = 1, column = 0, sticky = W)
 
-       self.instruction2 = Label(self, text = "Enter password")
+       self.receiver = Entry(self)
+       self.receiver.grid(row = 1, column = 1, sticky = W)
+
+       self.instruction2 = Label(self, text = "Enter sender password")
        self.instruction2.grid(row = 2, column = 0, sticky = W)
 
        self.password = Entry(self,show="*")
@@ -61,7 +67,8 @@ class Application(Frame):
    def add_email(self):
        username = self.email.get()
        password = self.password.get()
-       print "Username: "+username+"|"+"Password: " + password
+       receivers =  self.receiver.get()
+       print "Username: "+username+"|"+"Password: " + password + "|"+"Receiver: "+ receivers
 
 
    def video(self):
@@ -81,6 +88,7 @@ class Application(Frame):
    def email(self):
        username = self.email.get()
        password = self.password.get()
+       receivers =  self.receiver.get()
 
        GPIO.setmode(GPIO.BCM)
        GPIO.setup(4,GPIO.IN, GPIO.PUD_UP)
@@ -98,26 +106,25 @@ class Application(Frame):
 	           state = "Valmis"
 
 	           if state == "Valmis":
-	            sender = 'embeddedkamera@gmail.com'
-	            receivers = ['aatu.pitkanen@hotmail.com']
-
+	           
+	           
 	            message = MIMEMultipart()
        		    message['Subject'] = 'Valvontakamera Video'
 	            message['From'] = 'Raspi'
-	            message['To'] = 'Aatu'
+	            message['To'] = email
 	            message.attach(MIMEApplication(open("/home/pi/Desktop/Foo.h264", "rb").read()))
 	            message.add_header('Content-Disposition', 'attachment', filename="Video.h264")
 	
 	            Server = smtplib.SMTP('smtp.gmail.com:587')
 	            Server.starttls()
 	            Server.login(username,password)
-	            Server.sendmail(sender, receivers, message.as_string())
+	            Server.sendmail(email, receivers, message.as_string())
 	            print "Sahkoposti lahetetty!"
 	            Server.quit()
       
    def stream(self):
        client_socket = socket.socket()
-       client_socket.connect(('Ade', 8000))
+       client_socket.connect((socket.gethostname(), 8000))
 
        connection = client_socket.makefile('wb')
        try:
@@ -138,12 +145,13 @@ class Application(Frame):
    def email_picture(self):
      username = self.email.get()
      password = self.password.get()
+     receivers =  self.receiver.get()
 
      GPIO.setmode(GPIO.BCM)
      GPIO.setup(4, GPIO.IN, GPIO.PUD_UP)
      with picamera.PiCamera() as camera:
       time.sleep(1)
-	  kuva = 1
+      kuva = 1
       while kuva == 1:
         GPIO.wait_for_edge(4, GPIO.FALLING)
         print "Kuva otettu"
@@ -151,12 +159,11 @@ class Application(Frame):
         state = "valmis"
 
         if state == "valmis":
-           sender = 'embeddedkamera@gmail.com'
-           receivers = ['aatu.pitkanen@hotmail.com']
+          
            message = MIMEMultipart()
            message['Subject'] = 'Valvontakamera Valokuva'
            message['From'] = 'Raspi'
-           message['To'] = 'Aatu'
+           message['To'] = email
            message.preamble = "Photo @ "
            fp = open("/home/pi/Desktop/Testi.jpg", "rb")
            img = MIMEImage(fp.read())
@@ -167,7 +174,7 @@ class Application(Frame):
            Server = smtplib.SMTP('smtp.gmail.com:587')
            Server.starttls()
            Server.login(username,password)
-           Server.sendmail(sender, receivers, message.as_string())
+           Server.sendmail(email, receivers, message.as_string())
 
            Server.quit()
 
