@@ -101,28 +101,27 @@ class Application(Frame):
        with picamera.PiCamera() as camera:
           loop = 1
           while loop == 1:
-	           camera.resolution = (640, 480)
-	           GPIO.wait_for_edge(4,GPIO.FALLING)
-	           print "Nauhoitus alkoi"
-	           camera.start_recording('/home/pi/Desktop/camera/Foo.h264')
-        	   camera.wait_recording(30)
-          	   camera.stop_recording()
-	           print "Nauhoitus paattyi"
-	           state = "Valmis"
-	           if state == "Valmis":
-	     
-	            message = MIMEMultipart()
-       		    message['Subject'] = 'Valvontakamera Video'
-	            message['From'] = 'Raspi'
-	            message['To'] = receivers
-	            message.attach(MIMEApplication(open("/home/pi/Desktop/camera/Foo.h264", "rb").read()))
-	            message.add_header('Content-Disposition', 'attachment', filename="Video.h264")
-	            Server = smtplib.SMTP('smtp.gmail.com:587')
-	            Server.starttls()
-	            Server.login(username,password)
-	            Server.sendmail(username, receivers, message.as_string())
-	            print "Sahkoposti lahetetty!"
-	            Server.quit()
+	        camera.resolution = (640, 480)
+	        GPIO.wait_for_edge(4,GPIO.FALLING)
+	        print "Nauhoitus alkoi"
+	        camera.start_recording('/home/pi/Desktop/camera/Foo.h264')
+        	camera.wait_recording(30)
+          	camera.stop_recording()
+	        print "Nauhoitus paattyi"
+	        state = "Valmis"
+	        if state == "Valmis":
+	         message = MIMEMultipart()
+       		 message['Subject'] = 'Valvontakamera Video'
+	         message['From'] = 'Raspi'
+	         message['To'] = receivers
+	         message.attach(MIMEApplication(open("/home/pi/Desktop/camera/Foo.h264", "rb").read()))
+	         message.add_header('Content-Disposition', 'attachment', filename="Video.h264")
+	         Server = smtplib.SMTP('smtp.gmail.com:587')
+	         Server.starttls()
+	         Server.login(username,password)
+	         Server.sendmail(username, receivers, message.as_string())
+	         print "Sahkoposti lahetetty!"
+	         Server.quit()
       
    def stream(self):
        hostname = str(self.addr.get())
