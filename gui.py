@@ -9,6 +9,8 @@ from email.mime.text import MIMEText
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEImage import MIMEImage
 from email.mime.application import MIMEApplication
+from email.mime.base import MIMEBase
+from email import Encoders
 
 class Application(Frame):
    
@@ -42,7 +44,7 @@ class Application(Frame):
        self.button1["command"] = self.stream
        self.button1.grid(row = 6, column = 0, sticky = W)
        
-       self.instruction3 = Label(self, text = "Stream host address")
+       self.instruction3 = Label(self, text = "Stream host name")
        self.instruction3.grid(row = 2, column = 0, sticky = W)
        self.instruction4 = Label(self, text = "Stream host port")
        self.instruction4.grid(row = 2, column = 1, sticky = W)
@@ -74,13 +76,14 @@ class Application(Frame):
        receivers =  self.receiver.get()
        print "Username: "+username+"|"+"Password: " + password + "|"+"Receiver: "+ receivers
 
+
    def video(self):
        GPIO.setmode(GPIO.BCM)
        GPIO.setup(4,GPIO.IN, GPIO.PUD_UP)
        with picamera.PiCamera() as camera:
 	 video = 1
 	 while video == 1:
-           d = time.strftime('%a, %d %b %Y %H:%M:%S')
+           d = time.strftime('%a,%d,%b,%Y,%H;%M;%S')
 	   camera.resolution = (640, 480)
            GPIO.wait_for_edge(4,GPIO.FALLING)
 	   print "Nauhoitus alkoi"
@@ -91,6 +94,7 @@ class Application(Frame):
 	   time.sleep(3)
     
    def email_video(self):
+       print "OK"
        username = self.email.get()
        password = self.password.get()
        receivers =  self.receiver.get()
@@ -101,41 +105,49 @@ class Application(Frame):
        with picamera.PiCamera() as camera:
           loop = 1
           while loop == 1:
-	        camera.resolution = (640, 480)
-	        GPIO.wait_for_edge(4,GPIO.FALLING)
-	        print "Nauhoitus alkoi"
-	        camera.start_recording('/home/pi/Desktop/camera/Foo.h264')
-        	camera.wait_recording(30)
-          	camera.stop_recording()
-	        print "Nauhoitus paattyi"
-	        state = "Valmis"
-	        if state == "Valmis":
-	         message = MIMEMultipart()
-       		 message['Subject'] = 'Valvontakamera Video'
-	         message['From'] = 'Raspi'
-	         message['To'] = receivers
-	         message.attach(MIMEApplication(open("/home/pi/Desktop/camera/Foo.h264", "rb").read()))
-	         message.add_header('Content-Disposition', 'attachment', filename="Video.h264")
-	         Server = smtplib.SMTP('smtp.gmail.com:587')
-	         Server.starttls()
-	         Server.login(username,password)
-	         Server.sendmail(username, receivers, message.as_string())
-	         print "Sahkoposti lahetetty!"
-	         Server.quit()
+		   d = time.strftime('%a,%d,%b,%Y,%H;%M;%S')
+	           camera.resolution = (640, 480)
+	           GPIO.wait_for_edge(4,GPIO.FALLING)
+	           print "Nauhoitus alkoi"
+	           camera.start_recording('/home/pi/Desktop/camera/Foo.h264')
+        	   camera.wait_recording(30)
+          	   camera.stop_recording()
+	           print "Nauhoitus paattyi"
+	           state = "Valmis"
+
+	           if state == "Valmis":
+	            message = MIMEMultipart()
+		    message['Subject'] = 'Valvontakamera Video'
+		    message['From'] = 'Raspi'
+		    message['To'] = receivers
+
+		    fp = open("/home/pi/Desktop/camera/Foo.h264", "rb")
+	            part = MIMEBase('application', "octet-stream")
+		    part.set_payload(fp.read())
+		    Encoders.encode_base64(part)
+		    part.add_header('Content-Disposition', 'attachment', filename=d+".h264")
+		    message.attach(part)
+
+		    Server = smtplib.SMTP('smtp.gmail.com:587')
+		    Server.starttls()
+		    Server.login(username,password)
+		    Server.sendmail(username, receivers, message.as_string())
+		    print "Sahkoposti lahetetty!"
+		    Server.quit()
+
       
    def stream(self):
        hostname = str(self.addr.get())
        port = int(self.port.get())
        client_socket = socket.socket()
        client_socket.connect((hostname, port))
+       print "OK"
        connection = client_socket.makefile('wb')
        try:
           with picamera.PiCamera() as camera:
                camera.resolution = (640, 480)
                camera.framerate = 24
-
                time.sleep(2)
-
                camera.start_recording(connection, format='h264')
                camera.wait_recording(604800)
                camera.stop_recording()
@@ -148,17 +160,18 @@ class Application(Frame):
      username = self.email.get()
      password = self.password.get()
      receivers =  self.receiver.get()
+     print "OK"
      GPIO.setmode(GPIO.BCM)
      GPIO.setup(4, GPIO.IN, GPIO.PUD_UP)
      with picamera.PiCamera() as camera:
       time.sleep(1)
       kuva = 1
       while kuva == 1:
-	d = time.strftime('%a, %d %b %Y %H:%M:%S')
+	d = time.strftime('%a,%d,%b,%Y,%H;%M;%S')
 	GPIO.wait_for_edge(4, GPIO.FALLING)
         for x in xrange(0,4):
-		 x = x + 1
-       		 camera.capture("/home/pi/Desktop/camera/"+str(x)+".jpg")
+                 x = x + 1
+                 camera.capture("/home/pi/Desktop/camera/"+str(x)+".jpg")
         message = MIMEMultipart()
         message['Subject'] = 'Valvontakamera Valokuva'
         message['From'] = 'Raspi'
@@ -169,7 +182,6 @@ class Application(Frame):
         fp.close()
         img.add_header('Content-Disposition', 'attachment', filename=d +"-"+str(1)+ ".jpg")
         message.attach(img)
-        
         fp = open("/home/pi/Desktop/camera/2.jpg", "rb")
         img = MIMEImage(fp.read())
         fp.close()
@@ -194,15 +206,19 @@ class Application(Frame):
 	Server.quit()
 
    def picture(self):
+       print "OK"
        GPIO.setmode(GPIO.BCM)
        GPIO.setup(4, GPIO.IN, GPIO.PUD_UP)
        with picamera.PiCamera() as camera:
 	kuva = 1
 	while kuva == 1:
-	  d = time.strftime('%a, %d %b %Y %H:%M:%S')
+	  d = time.strftime('%a,%d,%b,%Y,%H;%M;%S')
 	  GPIO.wait_for_edge(4, GPIO.FALLING)
           print "Kuva otettu"
-          camera.capture('/home/pi/Desktop/camera/'+d+'.jpg')
+          camera.capture('/home/pi/Desktop/camera/'+d+"-"+str(1)+'.jpg')
+	  camera.capture('/home/pi/Desktop/camera/'+d+"-"+str(2)+'.jpg')
+	  camera.capture('/home/pi/Desktop/camera/'+d+"-"+str(3)+'.jpg')
+   
 
    def __del__(self,type, value, traceback):
 	 print 'died'
